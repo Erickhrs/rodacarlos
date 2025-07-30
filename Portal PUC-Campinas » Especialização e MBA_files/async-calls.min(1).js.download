@@ -1,0 +1,348 @@
+jQuery(document).on("click", "#gradeAsync", function() {
+    var a, e;
+    if (!$("#grade").find(".content-async").hasClass("field") && !$("#grade").find(".content-async").hasClass("wait")) return a = $("#dataAsync").val(), e = '<h3>Grade Curricular</h3><div class="panel panel-default"><table class="table"><thead><tr><th width="15%">Período</th><th width="70%">Disciplina</th><th width="15%">Carga Horária</th></tr></thead>', $("#grade").find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_grade_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $("#grade").find(".content-async").removeClass("wait"), a && (obj = JSON.parse(a), $.each(obj, function(a, t) {
+                $.each(t, function(a, n) {
+                    e += "<tr>", 1 > a && (e += '<td class="valign" align="center" rowspan="' + t.length + '">' + n.periodo + "</td>"), e += "<td>" + n.nome + '</td><td align="center">' + n.cargaHoraria + "</td></tr>"
+                })
+            })), e += "</table></div>", $("#grade").find(".content-async").html(e).addClass("field")
+        },
+        error: function() {
+            $("#grade").find(".content-async").removeClass("wait")
+        }
+    }), !1
+});
+
+jQuery(document).on("click", "#gradeCursoAsync, #gradeVestibularAsync, #gradeAndamentoAsync", function(event) {
+	var idComponente = event.target.id;
+	var nomeDivComponente = "#grade";
+	
+	if (idComponente == "gradeCursoAsync") {
+		nomeDivComponente = "#grade-curso";
+	} else if (idComponente == "gradeVestibularAsync") {
+		nomeDivComponente = "#grade-vestibular";
+	} else if (idComponente == "gradeAndamentoAsync") {
+		nomeDivComponente = "#grade-andamento";
+	}
+	
+    var a, e;
+    if (!$(nomeDivComponente).find(".content-async").hasClass("field") && !$(nomeDivComponente).find(".content-async").hasClass("wait")) return a = $("#dataAsync").val(), e = '<h3>Grade Curricular</h3><div class="panel panel-default"><table class="table"><thead><tr><th width="15%">Período</th><th width="70%">Disciplina</th><th width="15%">Carga Horária</th></tr></thead>', $(nomeDivComponente).find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_grade_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $(nomeDivComponente).find(".content-async").removeClass("wait"), a && (obj = JSON.parse(a), $.each(obj, function(a, t) {
+                $.each(t, function(a, n) {
+                    e += "<tr>", 1 > a && (e += '<td class="valign" align="center" rowspan="' + t.length + '">' + n.periodo + "</td>"), e += "<td>" + n.nome + '</td><td align="center">' + n.cargaHoraria + "</td></tr>"
+                })
+            })), e += "</table></div>", $(nomeDivComponente).find(".content-async").html(e).addClass("field")
+        },
+        error: function() {
+            $(nomeDivComponente).find(".content-async").removeClass("wait")
+        }
+    }), !1
+});
+
+jQuery(document).ready(function() {
+    var a, e;
+    return $('[data-toggle="tab"][href="#docente"]').parent().hide(), 0 !== window.location.pathname.indexOf("/graduacao/") || $("#docente").find(".content-async").hasClass("field") || $("#docente").find(".content-async").hasClass("wait") ? void 0 : (a = $("#dataAsync").val(), e = '<h3>Corpo Docente</h3><div class="accordion"><ul>', $("#docente").find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_docentes_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $("#docente").find(".content-async").removeClass("wait"), "string" == typeof a && a.length > 0 ? (obj = JSON.parse(a), obj.length > 0 && ($.each(obj, function(a, t) {
+                e += "<li><h3>" + t.nome + '</h3><div class="slide"><input type="hidden" class="docente-async" value="' + t.async + '"><p><strong>Titulação: </strong><span>' + t.titulacaoMaior + "</span></p><p><strong>Qualificação: </strong><span>" + t.totalTitulacao + "</span></p><p><strong>Tempo de Casa: </strong><span>" + t.tempoContrato + '</span></p><p><button class="btn btn-sm trigger-async-disciplinas">Ver Disciplinas</button></p></div></li>'
+            }), e += "</ul></div>", $("#docentesAsync").show(), $("#docente").find(".content-async").html(e).addClass("field"), $('[data-toggle="tab"][href="#docente"]').parent().show())) : $('[data-toggle="tab"][href="#docente"]').parent().remove()
+        },
+        error: function() {
+            $('[data-toggle="tab"][href="#docente"]').parent().remove()
+        }
+    }), !1)
+});
+
+jQuery(document).ready(function() {
+    var a, e;
+    return $('[data-toggle="tab"][href="#docente-curso"]').parent().hide(), 0 !== window.location.pathname.indexOf("/graduacao/") || $("#docente-curso").find(".content-async").hasClass("field") || $("#docente-curso").find(".content-async").hasClass("wait") ? void 0 : (a = $("#dataAsync").val(), e = '<h3>Corpo Docente</h3><div class="accordion"><ul>', $("#docente-curso").find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_docentes_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $("#docente-curso").find(".content-async").removeClass("wait"), "string" == typeof a && a.length > 0 ? (obj = JSON.parse(a), obj.length > 0 && ($.each(obj, function(a, t) {
+                e += "<li><h3>" + t.nome + '</h3><div class="slide"><input type="hidden" class="docente-async" value="' + t.async + '"><p><strong>Titulação: </strong><span>' + t.titulacaoMaior + "</span></p><p><strong>Qualificação: </strong><span>" + t.totalTitulacao + "</span></p><p><strong>Tempo de Casa: </strong><span>" + t.tempoContrato + '</span></p><p><button class="btn btn-sm trigger-async-disciplinas">Ver Disciplinas</button></p></div></li>'
+            }), e += "</ul></div>", $("#docentesAsync").show(), $("#docente-curso").find(".content-async").html(e).addClass("field"), $('[data-toggle="tab"][href="#docente-curso"]').parent().show())) : $('[data-toggle="tab"][href="#docente-curso"]').parent().remove()
+        },
+        error: function() {
+            $('[data-toggle="tab"][href="#docente-curso"]').parent().remove()
+        }
+    }), !1)
+});
+
+jQuery(document).ready(function() {
+    var a, e;
+    return $('[data-toggle="tab"][href="#docente-vestibular"]').parent().hide(), 0 !== window.location.pathname.indexOf("/graduacao/") || $("#docente-vestibular").find(".content-async").hasClass("field") || $("#docente-vestibular").find(".content-async").hasClass("wait") ? void 0 : (a = $("#dataAsync").val(), e = '<h3>Corpo Docente</h3><div class="accordion"><ul>', $("#docente-vestibular").find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_docentes_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $("#docente-vestibular").find(".content-async").removeClass("wait"), "string" == typeof a && a.length > 0 ? (obj = JSON.parse(a), obj.length > 0 && ($.each(obj, function(a, t) {
+                e += "<li><h3>" + t.nome + '</h3><div class="slide"><input type="hidden" class="docente-async" value="' + t.async + '"><p><strong>Titulação: </strong><span>' + t.titulacaoMaior + "</span></p><p><strong>Qualificação: </strong><span>" + t.totalTitulacao + "</span></p><p><strong>Tempo de Casa: </strong><span>" + t.tempoContrato + '</span></p><p><button class="btn btn-sm trigger-async-disciplinas">Ver Disciplinas</button></p></div></li>'
+            }), e += "</ul></div>", $("#docentesAsync").show(), $("#docente-vestibular").find(".content-async").html(e).addClass("field"), $('[data-toggle="tab"][href="#docente-vestibular"]').parent().show())) : $('[data-toggle="tab"][href="#docente-vestibular"]').parent().remove()
+        },
+        error: function() {
+            $('[data-toggle="tab"][href="#docente-vestibular"]').parent().remove()
+        }
+    }), !1)
+});
+
+jQuery(document).ready(function() {
+    var a, e;
+    return $('[data-toggle="tab"][href="#docente-andamento"]').parent().hide(), 0 !== window.location.pathname.indexOf("/graduacao/") || $("#docente-andamento").find(".content-async").hasClass("field") || $("#docente-andamento").find(".content-async").hasClass("wait") ? void 0 : (a = $("#dataAsync").val(), e = '<h3>Corpo Docente</h3><div class="accordion"><ul>', $("#docente-andamento").find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_docentes_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $("#docente-andamento").find(".content-async").removeClass("wait"), "string" == typeof a && a.length > 0 ? (obj = JSON.parse(a), obj.length > 0 && ($.each(obj, function(a, t) {
+                e += "<li><h3>" + t.nome + '</h3><div class="slide"><input type="hidden" class="docente-async" value="' + t.async + '"><p><strong>Titulação: </strong><span>' + t.titulacaoMaior + "</span></p><p><strong>Qualificação: </strong><span>" + t.totalTitulacao + "</span></p><p><strong>Tempo de Casa: </strong><span>" + t.tempoContrato + '</span></p><p><button class="btn btn-sm trigger-async-disciplinas">Ver Disciplinas</button></p></div></li>'
+            }), e += "</ul></div>", $("#docentesAsync").show(), $("#docente-andamento").find(".content-async").html(e).addClass("field"), $('[data-toggle="tab"][href="#docente-andamento"]').parent().show())) : $('[data-toggle="tab"][href="#docente-andamento"]').parent().remove()
+        },
+        error: function() {
+            $('[data-toggle="tab"][href="#docente-andamento"]').parent().remove()
+        }
+    }), !1)
+});
+
+jQuery(document).on("click", "#ementaAsync", function() {
+    var a, e;
+    if (!$("#ementa").find(".content-async").hasClass("field") && !$("#ementa").find(".content-async").hasClass("wait")) return a = $("#dataAsync").val(), emanta = '<h3>Ementa</h3><div class="panel panel-default"><table class="table"><thead><tr><th width="30%" align="center">Disciplina</th><th width="70%" align="center">Ementa</th></tr></thead>', $("#ementa").find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_ementa_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $("#ementa").find(".content-async").removeClass("wait"), a && (obj = JSON.parse(a), $.each(obj, function() {
+                emanta += "<tr><td>" + this.nomeComponente + "</td><td>" + this.ementa + "</td></tr>"
+            }), e += "</table></div>", $("#ementa").find(".content-async").html(emanta).addClass("field"))
+        },
+        error: function() {
+            $("#ementa").find(".content-async").removeClass("wait")
+        }
+    }), !1
+});
+
+jQuery(document).on("click", "#ementaCursoAsync, #ementaVestibularAsync, #ementaAndamentoAsync", function(event) {
+	var idComponente = event.target.id;
+	var nomeDivComponente = "#ementa";
+	
+	if (idComponente == "ementaCursoAsync") {
+		nomeDivComponente = "#ementa-curso";
+	} else if (idComponente == "ementaVestibularAsync") {
+		nomeDivComponente = "#ementa-vestibular";
+	} else if (idComponente == "ementaAndamentoAsync") {
+		nomeDivComponente = "#ementa-andamento";
+	}
+	
+    var a, e;
+    if (!$(nomeDivComponente).find(".content-async").hasClass("field") && !$(nomeDivComponente).find(".content-async").hasClass("wait")) return a = $("#dataAsync").val(), emanta = '<h3>Ementa</h3><div class="panel panel-default"><table class="table"><thead><tr><th width="30%" align="center">Disciplina</th><th width="70%" align="center">Ementa</th></tr></thead>', $(nomeDivComponente).find(".content-async").addClass("wait"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_ementa_async",
+            curso_id: a
+        },
+        success: function(a) {
+            $(nomeDivComponente).find(".content-async").removeClass("wait"), a && (obj = JSON.parse(a), $.each(obj, function() {
+                emanta += "<tr><td>" + this.nomeComponente + "</td><td>" + this.ementa + "</td></tr>"
+            }), e += "</table></div>", $(nomeDivComponente).find(".content-async").html(emanta).addClass("field"))
+        },
+        error: function() {
+            $(nomeDivComponente).find(".content-async").removeClass("wait")
+        }
+    }), !1
+});
+
+jQuery(document).on("click", "#tesesAsync, .loadMoreTeses", function() {
+    // verifica se ha uma requisicao em andamento e cancela o procedimento
+    if ($("#teses").find(".content-async").hasClass("wait"))
+        return;
+    
+    // adiciona classe de operacao em andamento
+    $("#teses").find(".content-async").addClass("wait");
+    $("#teses").find(".content-async center img").show();
+    $("#teses").find(".content-async center button").hide();
+
+    // json que constitue a query string da busca
+    var json = {
+        type: 'program',
+        sort_by: 2, // ordenar por data de defesa
+        order: 'DESC',
+        rpp: 20, // linhas por busca
+        etal: -1,
+        offset: $("#offset").val(),
+        value: $("#programaPosGraduacao").val().replace(/ /g, "+")
+    };
+
+    // envia requisicao
+    $.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "pos_graduacao_teses_async",
+            qryString: Object.keys(json).map(function(key) { return encodeURIComponent(key) + '=' + json[key];}).join('&')
+        },
+        success: function (html) {
+            // recupera linhas da tabela ignorando a primeira linha (cabecalho)
+            var rows = $(html).find(".panel.panel-primary").find("table tr").splice(1, 21);
+
+            // verifica se nao ha linhas
+            if (rows.length === 0) {
+                // se a tabela estiver vazia apresenta mensagem que nao ha teses para esse programa
+                if ($("#teses").find("table tr").length === 1) {
+                    $("#teses").find(".content-async").html("Não existem teses e dissertações cadastradas para esse programa de pós graduação.");
+                }        
+                
+                $("#teses").find(".content-async center").hide();
+                return;
+
+            } else {
+                // atualiza offset da paginacao
+                $("#offset").val(+$("#offset").val() +20);
+                $("#totalResults").val(+$("#totalResults").val() +rows.length)
+
+                $.each(rows, function (){
+                    var row, dt;
+                    
+                    row = $(this);
+                    dt = new Date(Date.parse(row.find("td").eq(0).html().replace(/-/g, ", ")));
+
+                    // remove colunas de pre-visualizacao e nome do programa
+                    row.find("td").eq(1).remove();
+                    row.find("td").eq(4).remove();
+
+                    $.each(row.find("a"), function (key, value){
+                       // fix url
+                       $(value).attr("href", "http://tede.bibliotecadigital.puc-campinas.edu.br:8080" + $(value).attr("href"));
+                    });
+                    
+                    if (!isNaN(dt.getDate()))
+                        row.find("td").eq(0).html(dt.getDate() + "/" + (dt.getMonth()+1) + "/" + dt.getFullYear());
+                    else 
+                        row.find("td").eq(0).html((new Date(row.find("td").eq(0).html())).toLocaleDateString());
+                });
+
+                $("#teses").find("table").append(rows);
+                
+                // remove classes de operacao em andamento
+                $("#teses").find(".content-async").removeClass("wait");
+                $("#teses").find(".content-async center img").hide();
+
+                if ( $("#totalResults").val() === $("#offset").val() )
+                    $("#teses").find(".content-async center button").show();
+            }
+        },
+        error: function (err) {
+            $("#teses").find(".content-async").html("Ocorreu um erro ao buscar teses e dissertações para esse programa de pós graduação.");
+        }
+    });
+});
+
+jQuery(document).on("click", "#periodicosAsync", function() {
+    if (!$("#periodicos").find(".content-async").hasClass("wait") && !$("#periodicos").find(".content-async").hasClass("field")) {
+        $("#periodicos").find(".content-async").addClass("wait");
+        var a;
+        return a = $("#codPeriodico").val(), jQuery.ajax({
+            url: postGrade.ajax_url,
+            type: "post",
+            data: {
+                action: "pos_graduacao_periodicos_async",
+                codigoPeriodico: a
+            },
+            success: function(a) {
+                if ($("#periodicos").find(".content-async").removeClass("wait"), a) {
+                    var e, t, estiloAfastarTextoImg="margin-left: 50px;";
+                    if (e = JSON.parse(a), 0 === e.length) return void $("#periodicos").find(".content-async").html("<h3>Ocorreu um erro ao buscar o periódico</h3>").addClass("field");
+                    t = '<div class="periodicos-container" style="position: relative; padding-left: 100px;"><a target="_blank" href="'+ (e.link != null ? e.link : "http://periodicos.puc-campinas.edu.br" )  +'"><img src="//wl.sis.puc-campinas.edu.br/midia/periodicos/' + e.imagem + '" style="position: absolute;top: 0;left: 0; width: 160px; height: 190px; max-width: 1000px;"/></a><div class="periodicos-row" style="'+estiloAfastarTextoImg+'"><h3>' + e.nome + '</h3></div><div class="periodicos-row" style="'+estiloAfastarTextoImg+'">' + e.descricao.replace(/font-size: 14px/g, "") + '</div><div class="periodicos-row" style="'+estiloAfastarTextoImg+'"><a target="_blank" href="'+ (e.link != null ? e.link : "http://periodicos.puc-campinas.edu.br" )  +'">Consultar Periódico</a></div></div>', $("#periodicos").find("center").remove(), $("#periodicos").find(".content-async").append(t).addClass("field")
+                }
+            },
+            error: function() {
+                $("#periodicos").find(".content-async").removeClass("wait")
+            }
+        }), !1
+    }
+});
+
+jQuery(document).on("click", ".trigger-async-disciplinas", function() {
+    var a, e;
+    e = this, a = "<p><strong>Disciplinas</strong></p><ul>", $(e).html('<img src="/wp-content/uploads/2016/05/ajax-loader.gif">').css("background-color", "transparent"), jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "graduacao_docentes_disciplinas_async",
+            disciplinasAsync: $(this).parents(".slide").find("input.docente-async").val(),
+            codCurso: $("#dataAsync").val()
+        },
+        success: function(t) {
+            var n;
+            t && (n = JSON.parse(t), $.each(n, function() {
+                a += "<li>" + this + "</li>"
+            }), a += "</ul>", $(e).parent("p").html(a))
+        },
+        error: function() {
+            $(e).html("Ocorreu um erro").attr("disabled")
+        }
+    })
+});
+
+jQuery(document).ready(function() {
+    return jQuery.ajax({
+        url: postGrade.ajax_url,
+        type: "post",
+        data: {
+            action: "verifica_usuario_logado_async"
+        },
+        success: function(a) {
+            a.length > 0 && $("#lblLoginTop").html(a)
+        },
+        error: function() {}
+    }), !1
+});
+
+jQuery(window).load(function() {
+        jQuery(".js-field-cf_cpf").mask('000.000.000-00', {reverse: false});
+        jQuery(".js-field-cf_cpf").on( "blur", function() {
+            var meuCPF = $(this).val();
+            if (!testaCPF(meuCPF)) { $(this).val(''); alert("CPF inválido! Favor entrar novamente."); };
+         });
+        jQuery(".phone").on( "focus", function() {
+            jQuery(this).attr('maxlength',19);
+         });
+		
+		jQuery('.js-field-name').attr("placeholder", "Nome completo *");
+		jQuery(".js-field-name").on( "blur", function() {
+             $(this).attr("placeholder", "Nome completo *");
+         });
+        console.log('finished');
+    });

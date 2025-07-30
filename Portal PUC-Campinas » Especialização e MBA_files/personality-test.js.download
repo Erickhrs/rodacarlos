@@ -1,0 +1,844 @@
+jQuery(document).ready(function($) {
+    // Verificar se há um token na URL
+    const container = $('#personality-test-container');
+    const token = container.data('token');
+    
+    if (token) {
+        // Carregar resultados existentes
+        loadExistingResults(token);
+        return;
+    }
+    
+    // Máscara inteligente para telefone
+    var SPMaskBehavior = function (val) {
+      return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+    },
+    spOptions = {
+      onKeyPress: function(val, e, field, options) {
+          field.mask(SPMaskBehavior.apply({}, arguments), options);
+        }
+    };
+
+    $('#user-phone').mask(SPMaskBehavior, spOptions);
+    
+    // Máscara para CEP
+    $('#user-cep').mask('00000-000');
+    
+    // Máscara para data de nascimento
+    $('#user-birth-date').mask('00/00/0000');
+
+    let currentQuestion = 1;
+    const totalQuestions = 12;
+    let userName = '';
+    let userEmail = '';
+    let userPhone = '';
+    let userCep = '';
+    let userBirthDate = '';
+    let userEducation = '';
+    let userToken = '';
+    let userLgpd = false;
+    
+    // Função para capturar parâmetros UTM da URL
+    function getUtmParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return {
+            utm_source: urlParams.get('utm_source') || '',
+            utm_medium: urlParams.get('utm_medium') || '',
+            utm_campaign: urlParams.get('utm_campaign') || '',
+            utm_content: urlParams.get('utm_content') || '',
+            utm_term: urlParams.get('utm_term') || ''
+        };
+    }
+    
+    // Esconde a mensagem de erro quando o usuário começa a digitar
+    $('.user-info-form input, .user-info-form select').on('input change', function() {
+        hideValidationError('#test-validation-error');
+    });
+    
+    // Funções de erro
+    function showValidationError(selector, message) {
+        const errorContainer = $(selector);
+        errorContainer.text(message);
+        errorContainer.slideDown();
+    }
+
+    function hideValidationError(selector) {
+        $(selector).slideUp();
+    }
+
+    // Função para salvar nome e e-mail parcialmente
+    function saveUserEmailPartial(name, email, aceite, callback) {
+        // Mostra feedback visual
+        showSavingEmailFeedback();
+        // Captura UTM
+        const utmParams = getUtmParameters();
+        $.ajax({
+            url: personality_test_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'save_user_email_partial',
+                nonce: personality_test_ajax.nonce,
+                name: name,
+                email: email,
+                aceite: aceite,
+                utm_source: utmParams.utm_source,
+                utm_medium: utmParams.utm_medium,
+                utm_campaign: utmParams.utm_campaign,
+                utm_content: utmParams.utm_content,
+                utm_term: utmParams.utm_term
+            },
+            success: function(response) {
+                hideSavingEmailFeedback();
+                if (response.success && response.data.token) {
+                    userToken = response.data.token;
+                    if (typeof callback === 'function') callback(true);
+                } else {
+                    showValidationError('#test-validation-error', response.data || 'Erro ao salvar e-mail.');
+                    if (typeof callback === 'function') callback(false);
+                }
+            },
+            error: function() {
+                hideSavingEmailFeedback();
+                showValidationError('#test-validation-error', 'Erro de comunicação ao salvar e-mail.');
+                if (typeof callback === 'function') callback(false);
+            }
+        });
+    }
+
+    // Feedback visual de salvamento
+    function showSavingEmailFeedback() {
+        if ($('#saving-email-feedback').length === 0) {
+            $(`.form-step[data-step='2']`).append('<div id="saving-email-feedback" style="margin-top:10px;color:#3498db;font-weight:bold;">Salvando e-mail...</div>');
+        }
+    }
+    function hideSavingEmailFeedback() {
+        $('#saving-email-feedback').remove();
+    }
+
+    // Intercepta avanço do step 2 (e-mail + LGPD)
+    $('.user-info-form').on('click', '.btn-next-step[data-next-step="3"]', function(e) {
+        const name = $('#user-name').val().trim();
+        const email = $('#user-email').val().trim();
+        const aceite = $('#user-lgpd').is(':checked');
+        if (!email || !isValidEmail(email)) {
+            showValidationError('#test-validation-error', 'Informe um e-mail válido.');
+            e.preventDefault();
+            return false;
+        }
+        if (!aceite) {
+            showValidationError('#test-validation-error', 'É necessário aceitar o termo de consentimento para continuar.');
+            e.preventDefault();
+            return false;
+        }
+        // Salva nome, email e LGPD antes de avançar
+        saveUserEmailPartial(name, email, aceite, function(success) {
+            if (success) {
+                currentStep = 3;
+                showStep(currentStep);
+            }
+        });
+        // Impede avanço automático, só avança no callback
+        e.preventDefault();
+        return false;
+    });
+
+    // Se o usuário voltar e alterar o e-mail, limpa o token para forçar novo salvamento
+    $('#user-email').on('input', function() {
+        userToken = '';
+    });
+
+    // Iniciar teste
+    $('#start-test').click(function() {
+        hideValidationError('#test-validation-error');
+        userName = $('#user-name').val().trim();
+        userEmail = $('#user-email').val().trim();
+        userPhone = $('#user-phone').val().trim();
+        userCep = $('#user-cep').val().trim();
+        userBirthDate = $('#user-birth-date').val().trim();
+        userEducation = $('#user-education').val().trim();
+        userLgpd = $('#user-lgpd').is(':checked');
+        
+        if (!userName || !userEmail || !userPhone || !userCep || !userBirthDate || !userEducation) {
+            showValidationError('#test-validation-error', 'Por favor, preencha todos os campos para continuar.');
+            return;
+        }
+        if (!userLgpd) {
+            showValidationError('#test-validation-error', 'É necessário aceitar o termo de consentimento para continuar.');
+            return;
+        }
+        
+        if (!isValidEmail(userEmail)) {
+            showValidationError('#test-validation-error', 'O endereço de e-mail informado não parece ser válido.');
+            return;
+        }
+
+        const phoneDigits = userPhone.replace(/\D/g, '');
+        if (phoneDigits.length < 10) {
+            showValidationError('#test-validation-error', 'O telefone precisa ter o DDD e o número completo.');
+            return;
+        }
+        
+        // Validar CEP
+        const cepDigits = userCep.replace(/\D/g, '');
+        if (cepDigits.length !== 8) {
+            showValidationError('#test-validation-error', 'O CEP deve ter 8 dígitos.');
+            return;
+        }
+        
+        // Validar data de nascimento
+        if (!isValidBirthDate(userBirthDate)) {
+            showValidationError('#test-validation-error', 'A data de nascimento informada não é válida.');
+            return;
+        }
+        
+        // Salvar informações do usuário primeiro
+        saveUserInfo();
+    });
+    
+    // Navegação entre questões
+    $('#next-question').click(function() {
+        hideValidationError('#question-validation-error');
+        if (validateCurrentQuestion()) {
+            if (currentQuestion < totalQuestions) {
+                currentQuestion++;
+                showQuestion(currentQuestion);
+            }
+        } else {
+            showValidationError('#question-validation-error', 'Por favor, responda todas as opções da questão atual.');
+        }
+    });
+    
+    $('#prev-question').click(function() {
+        hideValidationError('#question-validation-error');
+        if (currentQuestion > 1) {
+            currentQuestion--;
+            showQuestion(currentQuestion);
+        }
+    });
+    
+    // Submeter teste
+    $('#submit-test').click(function() {
+        hideValidationError('#question-validation-error');
+        if (validateCurrentQuestion()) {
+            submitTest();
+        } else {
+            showValidationError('#question-validation-error', 'Por favor, responda todas as opções da questão atual.');
+        }
+    });
+    
+    function showQuestion(questionNum) {
+        // Esconder todas as questões
+        $('.question-block').hide();
+        
+        // Mostrar questão atual
+        $('.question-block[data-question="' + questionNum + '"]').show();
+        
+        // Atualizar contador
+        $('#current-question').text(questionNum);
+        
+        // Atualizar barra de progresso
+        const progress = (questionNum / totalQuestions) * 100;
+        $('#progress-fill').css('width', progress + '%');
+        
+        // Atualizar botões
+        $('#prev-question').toggle(questionNum > 1);
+        $('#next-question').toggle(questionNum < totalQuestions);
+        $('#submit-test').toggle(questionNum === totalQuestions);
+    }
+    
+    function validateCurrentQuestion() {
+        const currentQuestionBlock = $('.question-block[data-question="' + currentQuestion + '"]');
+        const optionItems = currentQuestionBlock.find('.option-item');
+        
+        let allAnswered = true;
+        optionItems.each(function() {
+            const radioButtons = $(this).find('input[type="radio"]');
+            const isAnswered = radioButtons.is(':checked');
+            
+            if (!isAnswered) {
+                allAnswered = false;
+                return false; // break
+            }
+        });
+        
+        return allAnswered;
+    }
+    
+    function submitTest() {
+        const submitButton = $('#submit-test');
+        submitButton.prop('disabled', true);
+        // Garante que o loader existe
+        if ($('#test-questions .loader-overlay').length === 0) {
+            $('#test-questions').append('<div class="loader-overlay"><div class="loader-spinner"></div><p>Calculando seu resultado...</p></div>');
+        }
+        $('#test-questions .loader-overlay').fadeIn();
+        let loaderTimeout = setTimeout(function() {
+            $('#test-questions .loader-overlay p').text('Ainda estamos processando, por favor aguarde...');
+        }, 6000);
+
+        // Coletar todas as respostas
+        const answers = [];
+        $('input[type="radio"]:checked').each(function() {
+            answers.push({
+                name: $(this).attr('name'),
+                value: $(this).val()
+            });
+        });
+        
+        // Enviar via AJAX
+        $.ajax({
+            url: personality_test_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'submit_personality_test',
+                nonce: personality_test_ajax.nonce,
+                token: userToken,
+                answers: answers
+            },
+            success: function(response) {
+                clearTimeout(loaderTimeout);
+                $('#test-questions .loader-overlay').fadeOut();
+                if (response.success) {
+                    showResults(response.data);
+                } else {
+                    showValidationError('#question-validation-error', 'Erro ao processar o teste. Tente novamente.');
+                    submitButton.prop('disabled', false);
+                }
+            },
+            error: function() {
+                clearTimeout(loaderTimeout);
+                $('#test-questions .loader-overlay').fadeOut();
+                showValidationError('#question-validation-error', 'Erro de conexão. Tente novamente.');
+                submitButton.prop('disabled', false);
+            }
+        });
+    }
+    
+    function showResults(data) {
+        $('#test-questions').removeClass('active');
+        $('#test-results').addClass('active');
+        
+        const mainPersona = data.main_persona;
+        const scores = data.scores;
+        const descriptions = data.persona_descriptions;
+        
+        // Criar conteúdo dos resultados
+        let resultsHTML = `
+            <div class="results-header">
+                <h2>🎉 Parabéns, ${userName}!</h2>
+                <div class="main-persona">
+                    <h3>Seu perfil predominante é:</h3>
+                    <div class="persona-card" style="border-left: 5px solid ${descriptions[mainPersona].color}">
+                        <h4>${descriptions[mainPersona].title}</h4>
+                        <p>${descriptions[mainPersona].description}</p>
+                        <div class="characteristics">
+                            <h5>Suas características principais:</h5>
+                            <ul>
+                                ${descriptions[mainPersona].characteristics.map(char => `<li>${char}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-chart">
+                <h3>Distribuição dos seus perfis</h3>
+                <div class="chart-container">
+                    <canvas id="personality-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="all-personas">
+                <h3>Conheça todos os perfis</h3>
+                <div class="personas-grid">
+                    ${Object.keys(descriptions).map(persona => `
+                        <div class="persona-summary ${persona === mainPersona ? 'main' : ''}" 
+                             style="border-left: 3px solid ${descriptions[persona].color}">
+                            <h4>${descriptions[persona].title}</h4>
+                            <div class="score">Pontuação: ${scores[persona]}</div>
+                            <p>${descriptions[persona].description}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="final-message">
+                <p><strong>Lembre-se:</strong> Cada um de nós carrega em maior ou menor grau todos esses perfis. 
+                Você, neste momento, se destaca pelo perfil ${descriptions[mainPersona].title}. 
+                Aproveite o universo de possibilidades que a PUC-Campinas oferece!</p>
+                
+                <div class="action-buttons">
+                    <button id="print-results" class="btn-primary">Imprimir</button>
+                </div>
+            </div>
+            
+            <div class="important-notice">
+                <p><strong>Aviso importante:</strong></p>
+                <p>Este quiz tem caráter exploratório e informativo. Ele não é um teste vocacional nem substitui um processo de orientação profissional ou psicológica. Os perfis apresentados são baseados em preferências declaradas e têm como objetivo oferecer reflexões iniciais sobre sua relação com a aprendizagem e o mundo do trabalho.</p>
+                <p>Se você deseja aprofundar seu autoconhecimento e fazer escolhas mais seguras sobre sua trajetória acadêmica e profissional, recomendamos a busca por orientação com profissionais especializados, como psicólogos ou orientadores educacionais.</p>
+            </div>
+        `;
+        
+        $('#results-content').html(resultsHTML);
+        
+        // Criar gráfico
+        createRadarChart(scores, descriptions);
+        
+        // Eventos dos botões
+        $('#print-results').click(function() {
+            window.print();
+        });
+    }
+    
+    function createRadarChart(scores, descriptions) {
+        const ctx = document.getElementById('personality-chart').getContext('2d');
+        
+        const labels = Object.keys(descriptions).map(persona => descriptions[persona].title);
+        const data = Object.values(scores);
+        const colors = Object.keys(descriptions).map(persona => descriptions[persona].color);
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sua Pontuação',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: colors,
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: colors,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: Math.max(...data) + 5,
+                        ticks: {
+                            stepSize: 5
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        angleLines: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    function isValidBirthDate(birthDate) {
+        // Verificar formato DD/MM/AAAA
+        const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+        if (!dateRegex.test(birthDate)) {
+            return false;
+        }
+        
+        const [, day, month, year] = birthDate.match(dateRegex);
+        const date = new Date(year, month - 1, day);
+        
+        // Verificar se a data é válida
+        if (date.getFullYear() != year || date.getMonth() != month - 1 || date.getDate() != day) {
+            return false;
+        }
+        
+        // Verificar se não é data futura
+        const today = new Date();
+        if (date > today) {
+            return false;
+        }
+        
+        // Verificar se a pessoa tem pelo menos 10 anos
+        const minAge = new Date();
+        minAge.setFullYear(minAge.getFullYear() - 10);
+        if (date > minAge) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function saveUserInfo() {
+        const startButton = $('#start-test');
+        startButton.prop('disabled', true);
+        // Mostra loader
+        $('#test-intro .loader-overlay').remove();
+        $('#test-intro').append('<div class="loader-overlay" id="loader-user-info"><div class="loader-spinner"></div><p>Aguarde, estamos preparando o ambiente...</p></div>');
+        let loaderTimeout = setTimeout(function() {
+            $('#loader-user-info p').text('Ainda estamos processando, por favor aguarde...');
+        }, 6000);
+        
+        // Capturar parâmetros UTM
+        const utmParams = getUtmParameters();
+        
+        $.ajax({
+            url: personality_test_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'save_user_info',
+                nonce: personality_test_ajax.nonce,
+                name: userName,
+                email: userEmail,
+                phone: userPhone,
+                cep: userCep,
+                birth_date: userBirthDate,
+                education: userEducation,
+                utm_source: utmParams.utm_source,
+                utm_medium: utmParams.utm_medium,
+                utm_campaign: utmParams.utm_campaign,
+                utm_content: utmParams.utm_content,
+                utm_term: utmParams.utm_term,
+                aceite: userLgpd,
+                token: userToken // NOVO: envia token se existir
+            },
+            success: function(response) {
+                clearTimeout(loaderTimeout);
+                $('#loader-user-info').remove();
+                startButton.prop('disabled', false);
+                if (response.success && response.data.token) {
+                    userToken = response.data.token;
+                    // Oculta o formulário de cadastro e exibe as perguntas
+                    $('.user-info-form.step-form').hide();
+                    $('#test-questions').addClass('active');
+                    showQuestion(1);
+                } else {
+                    showValidationError('#test-validation-error', response.data || 'Erro ao salvar informações.');
+                }
+            },
+            error: function() {
+                clearTimeout(loaderTimeout);
+                $('#loader-user-info').remove();
+                startButton.prop('disabled', false);
+                showValidationError('#test-validation-error', 'Erro de comunicação ao salvar informações.');
+            }
+        });
+    }
+    
+    function showUniqueUrl(resultUrl) {
+        const urlMessage = `
+            <div class="unique-url-message">
+                <h4>🔗 Sua URL Única</h4>
+                <p>Guarde este link para acessar seus resultados depois:</p>
+                <div class="url-display">
+                    <input type="text" value="${resultUrl}" readonly id="result-url-input">
+                    <button type="button" onclick="copyUrl()" class="btn-secondary">Copiar</button>
+                </div>
+                <p class="url-note">Você pode compartilhar este link ou salvá-lo para consultar seus resultados posteriormente.</p>
+            </div>
+        `;
+        
+        $('#test-intro').append(urlMessage);
+    }
+    
+    function loadExistingResults(token) {
+        $('.loader-overlay').show();
+        let loaderTimeout = setTimeout(function() {
+            $('.loader-overlay p').text('Ainda estamos processando, por favor aguarde...');
+        }, 6000);
+        $.ajax({
+            url: personality_test_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'get_test_results',
+                nonce: personality_test_ajax.nonce,
+                token: token
+            },
+            success: function(response) {
+                clearTimeout(loaderTimeout);
+                if (response.success) {
+                    showExistingResults(response.data);
+                } else {
+                    showExistingResultsError(response.data || 'Erro ao carregar resultados.');
+                }
+            },
+            error: function() {
+                clearTimeout(loaderTimeout);
+                showExistingResultsError('Erro de conexão. Tente novamente.');
+            }
+        });
+    }
+    
+    function showExistingResults(data) {
+        $('.loader-overlay').hide();
+        $('#existing-results-content').show();
+        
+        const mainPersona = data.main_persona;
+        const scores = data.scores;
+        const descriptions = data.persona_descriptions;
+        
+        let resultsHTML = `
+            <div class="results-header">
+                <h2>🎉 Olá, ${data.name}!</h2>
+                <p>Seus resultados do teste de personalidade:</p>
+                
+                <div class="main-persona">
+                    <h3>Seu perfil predominante é:</h3>
+                    <div class="persona-card" style="border-left: 5px solid ${descriptions[mainPersona].color}">
+                        <h4>${descriptions[mainPersona].title}</h4>
+                        <p>${descriptions[mainPersona].description}</p>
+                        <div class="characteristics">
+                            <h5>Suas características principais:</h5>
+                            <ul>
+                                ${descriptions[mainPersona].characteristics.map(char => `<li>${char}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-chart">
+                <h3>Distribuição dos seus perfis</h3>
+                <div class="chart-container">
+                    <canvas id="personality-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="all-personas">
+                <h3>Conheça todos os perfis</h3>
+                <div class="personas-grid">
+                    ${Object.keys(descriptions).map(persona => `
+                        <div class="persona-summary ${persona === mainPersona ? 'main' : ''}" 
+                             style="border-left: 3px solid ${descriptions[persona].color}">
+                            <h4>${descriptions[persona].title}</h4>
+                            <div class="score">Pontuação: ${scores[persona]}</div>
+                            <p>${descriptions[persona].description}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="final-message">
+                <p><strong>Data do Quiz:</strong> ${new Date(data.test_date).toLocaleDateString('pt-BR')}</p>
+                
+                <div class="action-buttons">
+                    <button id="print-results" class="btn-secondary">Imprimir</button>
+                </div>
+            </div>
+            
+            <div class="important-notice">
+                <p><strong>Aviso importante:</strong></p>
+                <p>Este quiz tem caráter exploratório e informativo. Ele não é um teste vocacional nem substitui um processo de orientação profissional ou psicológica. Os perfis apresentados são baseados em preferências declaradas e têm como objetivo oferecer reflexões iniciais sobre sua relação com a aprendizagem e o mundo do trabalho.</p>
+                <p>Se você deseja aprofundar seu autoconhecimento e fazer escolhas mais seguras sobre sua trajetória acadêmica e profissional, recomendamos a busca por orientação com profissionais especializados, como psicólogos ou orientadores educacionais.</p>
+            </div>
+        `;
+        
+        $('#existing-results-content').html(resultsHTML);
+        
+        // Criar gráfico
+        createRadarChart(scores, descriptions);
+        
+        // Eventos dos botões
+        $('#print-results').click(function() {
+            window.print();
+        });
+    }
+    
+    function showExistingResultsError(message) {
+        $('.loader-overlay').hide();
+        $('#existing-results-content').show().html(`
+            <div class="error-message">
+                <h3>❌ Erro ao carregar resultados</h3>
+                <p>${message}</p>
+            </div>
+        `);
+    }
+    
+    // Função global para copiar URL
+    window.copyUrl = function() {
+        const urlInput = document.getElementById('result-url-input');
+        urlInput.select();
+        urlInput.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        
+        // Mostrar feedback
+        const copyButton = urlInput.nextElementSibling;
+        const originalText = copyButton.textContent;
+        copyButton.textContent = 'Copiado!';
+        copyButton.style.background = '#27ae60';
+        
+        setTimeout(() => {
+            copyButton.textContent = originalText;
+            copyButton.style.background = '';
+        }, 2000);
+    };
+    
+    // --- INÍCIO: Lógica de formulário passo a passo ---
+
+    // Estado do passo atual
+    let currentStep = 1;
+    const totalSteps = 7;
+
+    function showStep(step) {
+        $('.form-step').hide();
+        $(`.form-step[data-step='${step}']`).show();
+    }
+
+    // Avançar para o próximo campo
+    $('.user-info-form').on('click', '.btn-next-step', function() {
+        const step = parseInt($(this).data('next-step'));
+        if (validateStep(currentStep)) {
+            currentStep = step;
+            showStep(currentStep);
+        }
+    });
+
+    // Voltar para o campo anterior
+    $('.user-info-form').on('click', '.btn-prev-step', function() {
+        const step = parseInt($(this).data('prev-step'));
+        currentStep = step;
+        showStep(currentStep);
+    });
+
+    // Validação de cada campo individual
+    function validateStep(step) {
+        hideValidationError('#test-validation-error');
+        switch(step) {
+            case 1:
+                const name = $('#user-name').val().trim();
+                if (!name) {
+                    showValidationError('#test-validation-error', 'Por favor, preencha seu nome.');
+                    return false;
+                }
+                break;
+            case 2:
+                const email = $('#user-email').val().trim();
+                const aceite = $('#user-lgpd').is(':checked');
+                if (!email || !isValidEmail(email)) {
+                    showValidationError('#test-validation-error', 'Informe um e-mail válido.');
+                    return false;
+                }
+                if (!aceite) {
+                    showValidationError('#test-validation-error', 'É necessário aceitar o termo de consentimento.');
+                    return false;
+                }
+                break;
+            case 3:
+                const phone = $('#user-phone').val().trim();
+                const phoneDigits = phone.replace(/\D/g, '');
+                if (!phone || phoneDigits.length < 10) {
+                    showValidationError('#test-validation-error', 'Informe um telefone válido com DDD.');
+                    return false;
+                }
+                break;
+            case 4:
+                const cep = $('#user-cep').val().trim();
+                const cepDigits = cep.replace(/\D/g, '');
+                if (!cep || cepDigits.length !== 8) {
+                    showValidationError('#test-validation-error', 'Informe um CEP válido (8 dígitos).');
+                    return false;
+                }
+                break;
+            case 5:
+                const birth = $('#user-birth-date').val().trim();
+                if (!birth || !isValidBirthDate(birth)) {
+                    showValidationError('#test-validation-error', 'Informe uma data de nascimento válida.');
+                    return false;
+                }
+                break;
+            case 6:
+                const education = $('#user-education').val();
+                if (!education) {
+                    showValidationError('#test-validation-error', 'Selecione sua escolaridade.');
+                    return false;
+                }
+                break;
+            case 7:
+                if (!$('#user-lgpd').is(':checked')) {
+                    showValidationError('#test-validation-error', 'É necessário aceitar o termo de consentimento.');
+                    return false;
+                }
+                break;
+        }
+        return true;
+    }
+
+    // Função dinâmica de autosave progressivo
+    function autosaveUserInfo(fields) {
+        if (!userToken) return; // Só faz autosave se já houver token
+        $.ajax({
+            url: personality_test_ajax.ajax_url,
+            type: 'POST',
+            data: Object.assign({
+                action: 'save_user_info',
+                nonce: personality_test_ajax.nonce,
+                token: userToken
+            }, fields),
+            success: function(response) {
+                if (response.success && response.data.token) {
+                    userToken = response.data.token;
+                }
+            }
+            // Não exibe feedback visual
+        });
+    }
+
+    // Autosave ao avançar de cada campo após o e-mail+LGPD
+    $('.user-info-form').on('click', '.btn-next-step[data-next-step="4"]', function() {
+        // Step 3: telefone
+        const phone = $('#user-phone').val().trim();
+        autosaveUserInfo({ phone });
+    });
+    $('.user-info-form').on('click', '.btn-next-step[data-next-step="5"]', function() {
+        // Step 4: cep
+        const cep = $('#user-cep').val().trim();
+        autosaveUserInfo({ cep });
+    });
+    $('.user-info-form').on('click', '.btn-next-step[data-next-step="6"]', function() {
+        // Step 5: data de nascimento
+        const birth_date = $('#user-birth-date').val().trim();
+        autosaveUserInfo({ birth_date });
+    });
+    // No step da escolaridade, ao clicar em Iniciar Quiz, salva e inicia o teste
+    $('#start-test').click(function() {
+        const education = $('#user-education').val();
+        if (!education) {
+            showValidationError('#test-validation-error', 'Selecione sua escolaridade.');
+            return;
+        }
+        // Não faz autosave aqui, apenas envia tudo no saveUserInfo
+        hideValidationError('#test-validation-error');
+        userName = $('#user-name').val().trim();
+        userEmail = $('#user-email').val().trim();
+        userPhone = $('#user-phone').val().trim();
+        userCep = $('#user-cep').val().trim();
+        userBirthDate = $('#user-birth-date').val().trim();
+        userEducation = $('#user-education').val().trim();
+        userLgpd = $('#user-lgpd').is(':checked');
+        // Salvar informações finais do usuário
+        saveUserInfo();
+    });
+
+    // Inicializa mostrando o primeiro campo
+    showStep(currentStep);
+
+// --- FIM: Lógica de formulário passo a passo ---
+
+    // Inicializar primeira questão como oculta
+    $('.question-block').hide();
+});

@@ -1,0 +1,254 @@
+(function () {
+        
+    this.MenuAccess = function () {
+        var defaults = {
+            links : null,
+            shortcut : [50, 51, 52, 53, 54, 55, 56, 57]
+        };
+
+        if (arguments[0] && typeof arguments[0] === "object") {
+            this.options = extendDefaults(defaults, arguments[0]);
+        }
+    }
+
+
+    MenuAccess.prototype.init = function() {
+        this.createTrigger();
+        this.createPanel();
+        this.createShortcutList();
+        this.createToolsButtons();
+
+        listenerDocumentKeyDown(this.options.shortcut, this.options.links);
+
+        if (sessionStorage.getItem('menuAcessContrast')) {
+            document.body.setAttribute('data-contrast', 'contrast-1');
+        }
+    }
+
+
+    MenuAccess.prototype.createShortcutList = function () {
+        
+
+        var shortcutList, li, panel;
+        panel = document.getElementById('menuAcessPanel');
+
+        shortcutList = document.createElement('ol');
+        shortcutList.className = 'menu-acess-shortcut-list';
+
+        for (var i = 0; i < this.options.links.length; i++) {
+            li = document.createElement('li');
+            li.innerHTML = '<a href="'+this.options.links[i].url+'" title="'+this.options.links[i].lbl+'" tabindex="'+ (i+3) +'">'+this.options.links[i].lbl + ' <small>[ALT+' + (i+2) + ']</small>' +'</a>';
+            shortcutList.appendChild(li);
+        }
+
+        panel.appendChild(shortcutList);
+    }
+
+
+    MenuAccess.prototype.createToolsButtons = function () {
+        
+
+        var toolsList, li,button, panel;
+        panel = document.getElementById('menuAcessPanel');
+
+        toolsList = document.createElement('ol');
+        toolsList.className = 'menu-acess-tools-list';
+
+
+        /*
+        *  DECREASE FONT-SIZE
+        * * * */
+        li = document.createElement('li');
+        button = document.createElement('button');
+        button.innerHTML = '<i class="icon-fontsize"></i> Diminuir Fonte';
+        button.addEventListener('click', decreaseFontSize);
+        button.setAttribute('disabled', 'decreaseFontSize');
+        button.setAttribute('id', 'btnDecreaseFontSize');
+        button.setAttribute('tabindex', '12');
+        li.appendChild(button);
+        toolsList.appendChild(li);
+
+
+        /*
+        *  INCREASE FONT-SIZE
+        * * * */
+        li = document.createElement('li');
+        button = document.createElement('button');
+        button.innerHTML = '<i class="icon-fontsize"></i> Aumentar Fonte';
+        button.addEventListener('click', increaseFontSize);
+        button.setAttribute('id', 'btnIncreaseFontSize');
+        button.setAttribute('tabindex', '13');
+        li.appendChild(button);
+        toolsList.appendChild(li);
+
+
+        /*
+        *  CONTRAST
+        * * * */
+        li = document.createElement('li');
+        button = document.createElement('button');
+        button.innerHTML = '<i class="icon-ajust"></i> Alto Contraste';
+        button.addEventListener('click', contrast);
+        button.setAttribute('id', 'btnContrast');
+        button.setAttribute('tabindex', '14');
+        li.appendChild(button);
+        toolsList.appendChild(li);
+
+
+        panel.appendChild(toolsList);
+    }
+
+
+    MenuAccess.prototype.createPanel = function () {
+        
+
+        var panel, panelHead, buttonClose;
+
+        panel = document.createElement('div');
+        panel.setAttribute('id', 'menuAcessPanel');
+        panel.className = 'menu-acess-panel';
+
+        panelHead = document.createElement('div');
+        panelHead.className = 'menu-acess-panel-head';
+        panelHead.innerHTML = '<h1 class="menu-acess-panel-title" id="menuAcessTitle" tabindex="1">Menu Acess\u00edvel</h1>';
+
+        buttonClose = document.createElement('button');
+        buttonClose.className = 'menu-acess-panel-button-close';
+        buttonClose.innerHTML = '[FECHAR - ALT+1]';
+        buttonClose.setAttribute('title', 'Fechar Menu Acess\u00edvel');
+        buttonClose.setAttribute('tabindex', '2');
+        buttonClose.addEventListener('click', toggleMenuAcess);
+
+        panelHead.appendChild(buttonClose);
+        panel.appendChild(panelHead);
+        document.body.appendChild(panel);
+    }
+
+
+    MenuAccess.prototype.createTrigger = function () {
+        
+
+        var trigger;
+        trigger = document.createElement('button');
+        trigger.innerHTML = '<i class="icon-wheelchair"></i>';
+        trigger.className = 'menu-acess-trigger-open-menu';
+
+        trigger.addEventListener('click', toggleMenuAcess);
+
+        document.body.appendChild(trigger);
+    }
+
+    function extendDefaults(source, properties) {
+        var property;
+
+        for (property in properties) {
+            if (properties.hasOwnProperty(property)) {
+                source[property] = properties[property];
+            }
+        }
+        return source;
+    }
+
+
+    function toggleMenuAcess() {
+        var panel;
+        panel = document.getElementById('menuAcessPanel');
+
+        if (panel.className.indexOf('open') > -1) {
+            panel.classList.remove('open');
+        } else {
+            panel.classList.add('open');
+            document.getElementById('menuAcessTitle').focus();
+        }
+    }
+
+
+    function listenerDocumentKeyDown(shortcuts, links) {
+        document.addEventListener("keydown", function (e) {
+
+            if (shortcuts.indexOf(e.keyCode) > -1 && (e.altKey)) {
+                if (links[shortcuts.indexOf(e.keyCode)]) {
+                    e.preventDefault();
+                    location.href = links[shortcuts.indexOf(e.keyCode)].url;
+                }
+
+            } else if (e.keyCode === 49 && (e.altKey)) {
+                toggleMenuAcess();
+            }
+        });
+    }
+
+
+    function increaseFontSize() {
+        var size;
+
+        if (!document.body.getAttribute('data-fontincrease')) {
+            document.body.setAttribute('data-fontincrease', 'sm');
+            document.getElementById('btnDecreaseFontSize').removeAttribute('disabled');
+            return;
+        }
+
+        size = document.body.getAttribute('data-fontincrease');
+
+        switch (size) {
+        case 'sm':
+            document.body.setAttribute('data-fontincrease', 'md');
+            break;
+
+        case 'md':
+            document.body.setAttribute('data-fontincrease', 'lg');
+            break;
+
+        case 'lg':
+            document.body.setAttribute('data-fontincrease', 'xlg');
+            document.getElementById('btnIncreaseFontSize').setAttribute('disabled', 'disabled');
+            break;
+        }
+
+        document.getElementById('btnDecreaseFontSize').removeAttribute('disabled');
+        return;
+    }
+
+
+    function decreaseFontSize() {
+        var size;
+
+        if (document.body.getAttribute('data-fontincrease')) {
+            size = document.body.getAttribute('data-fontincrease');
+
+            switch (size) {
+            case 'xlg':
+                document.body.setAttribute('data-fontincrease', 'lg');
+                break;
+
+            case 'lg':
+                document.body.setAttribute('data-fontincrease', 'md');
+                break;
+
+            case 'md':
+                document.body.setAttribute('data-fontincrease', 'sm');
+                break;
+
+            case 'sm':
+                document.body.removeAttribute('data-fontincrease');
+                document.getElementById('btnDecreaseFontSize').setAttribute('disabled', 'disabled');
+                break;
+            }
+
+            document.getElementById('btnIncreaseFontSize').removeAttribute('disabled');
+            return;
+        }
+    }
+
+
+    function contrast() {
+        if (!document.body.getAttribute('data-contrast')) {
+            sessionStorage.setItem('menuAcessContrast', true);
+            document.body.setAttribute('data-contrast', 'contrast-1');
+        } else {
+            sessionStorage.clear('menuAcessContrast');
+            document.body.removeAttribute('data-contrast');
+        }
+    }
+    
+}());

@@ -1,0 +1,139 @@
+@import url(fontello.css);
+/*
+* COLORS
+*/
+/*
+* CONTRAST
+*/
+/*
+* RESET
+*/
+body {
+  margin: 0;
+  padding: 0; }
+
+
+/*
+* MENU ACESS PANEL
+*/
+.menu-acess-panel {
+  background-color: #3C537F;
+  color: #fff;
+  width: 100%;
+  max-height: 280px;
+  position: fixed;
+  top: 30%;
+  z-index: 9999;
+  display: none;
+  overflow-y: scroll;
+  padding: 1rem 0; }
+  .menu-acess-panel.open {
+    display: block; }
+  .menu-acess-panel .menu-acess-panel-head {
+    position: relative;
+    padding: 1rem; }
+    .menu-acess-panel .menu-acess-panel-head .menu-acess-panel-button-close {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      background: transparent;
+      border: none;
+      color: #fff;
+      cursor: pointer; }
+      .menu-acess-panel .menu-acess-panel-head .menu-acess-panel-button-close:focus {
+        outline: #00ff00 dotted 2px !important; }
+    .menu-acess-panel .menu-acess-panel-head .menu-acess-panel-title {
+      width: 70%;
+      margin: 0;
+      width: 70%;
+      color: #ffffff;
+      font-size: 36px;
+      padding: 0; }
+      .menu-acess-panel .menu-acess-panel-head .menu-acess-panel-title:focus {
+        outline: #00ff00 dotted 2px !important; }
+  .menu-acess-panel .menu-acess-shortcut-list {
+    padding: 0 1rem;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 18px; }
+    .menu-acess-panel .menu-acess-shortcut-list li {
+      box-sizing: border-box;
+      display: inline-block;
+      width: 12.5%;
+      list-style: none;
+      padding: .5rem; }
+      @media screen and (max-width: 960px) {
+        .menu-acess-panel .menu-acess-shortcut-list li {
+          width: 25%; } }
+      @media screen and (max-width: 480px) {
+        .menu-acess-panel .menu-acess-shortcut-list li {
+          width: 100%; } }
+      .menu-acess-panel .menu-acess-shortcut-list li a {
+        color: #fff;
+        text-decoration: none; }
+        .menu-acess-panel .menu-acess-shortcut-list li a:focus {
+          outline: #00ff00 dotted 2px !important; }
+        .menu-acess-panel .menu-acess-shortcut-list li a small {
+          display: block;
+          font-size: 12px; }
+  .menu-acess-panel .menu-acess-tools-list {
+    padding: 0 1rem;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box; }
+    .menu-acess-panel .menu-acess-tools-list li {
+      box-sizing: border-box;
+      display: inline-block;
+      list-style: none;
+      padding: .5rem; }
+      .menu-acess-panel .menu-acess-tools-list li button {
+        font-size: 16px;
+        padding: .75rem;
+        border: none;
+        color: #000; }
+        .menu-acess-panel .menu-acess-tools-list li button:focus {
+          outline: #00ff00 dotted 2px !important; }
+
+[data-contrast~=contrast-1] {
+  background: #000 !important;
+  color: #F1C40F !important; }
+  [data-contrast~=contrast-1] div,
+  [data-contrast~=contrast-1] button,
+  [data-contrast~=contrast-1] a,
+  [data-contrast~=contrast-1] span,
+  [data-contrast~=contrast-1] p,
+  [data-contrast~=contrast-1] ul,
+  [data-contrast~=contrast-1] li,
+  [data-contrast~=contrast-1] section,
+  [data-contrast~=contrast-1] header,
+  [data-contrast~=contrast-1] h1, [data-contrast~=contrast-1] h2, [data-contrast~=contrast-1] h3, [data-contrast~=contrast-1] h4, [data-contrast~=contrast-1] h5 {
+    background: #000 !important;
+    color: #F1C40F; }
+  [data-contrast~=contrast-1] button, [data-contrast~=contrast-1] a.btn {
+    color: #00ff00 !important;
+    border: 1px solid #00ff00 !important; }
+  [data-contrast~=contrast-1] a {
+    color: #8080ff !important; }
+
+[data-fontincrease~=sm] {
+  font-size: 1.6rem !important; }
+  [data-fontincrease~=sm] button, [data-fontincrease~=sm] a, [data-fontincrease~=sm] p, [data-fontincrease~=sm] span, [data-fontincrease~=sm] i {
+    font-size: 1.6rem !important; }
+
+[data-fontincrease~=md] {
+  font-size: 1.8rem !important; }
+  [data-fontincrease~=md] button, [data-fontincrease~=md] a, [data-fontincrease~=md] p, [data-fontincrease~=md] span, [data-fontincrease~=md] i {
+    font-size: 1.8rem !important; }
+
+[data-fontincrease~=lg] {
+  font-size: 2rem !important; }
+  [data-fontincrease~=lg] button, [data-fontincrease~=lg] a, [data-fontincrease~=lg] p, [data-fontincrease~=lg] span, [data-fontincrease~=lg] i {
+    font-size: 2rem !important; }
+
+[data-fontincrease~=xlg] {
+  font-size: 2.4rem !important; }
+  [data-fontincrease~=xlg] button, [data-fontincrease~=xlg] a, [data-fontincrease~=xlg] p, [data-fontincrease~=xlg] span, [data-fontincrease~=xlg] i {
+    font-size: 2.4rem !important; }
+
+/*# sourceMappingURL=menu-acess.css.map */
