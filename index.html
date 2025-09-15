@@ -89,8 +89,7 @@
         <svg viewBox="0 0 600 600">
             <g id="sectors"></g>
             <circle cx="300" cy="300" r="100" class="center-circle" />
-            <text x="300" y="290" class="center-label">CURSOS</text>
-            <text x="300" y="310" class="center-label">DISPONÍVEIS</text>
+            <text x="300" y="300" class="center-label">CURSOS</text>
         </svg>
 
         <div class="info-box" id="info">
@@ -103,10 +102,10 @@
         const sectors = [
             "Licitações e Contratos",
             "Auditoria Municipal",
-            "Governança Pública",
-            "Planejamento Estratégico",
-            "Controle de Patrimônio",
-            "Emendas Parlamentares",
+            "Governança Pública e Compliance",
+            "Planejamento Estratégico Municipal",
+            "Controle de Patrimônio e Almoxarifado",
+            "Emendas Parlamentares Municipais",
             "LDO, LOA e PPA"
         ];
 
@@ -224,9 +223,18 @@
             const text = document.createElementNS(svgNS, "text");
             text.setAttribute("x", labelX);
             text.setAttribute("y", labelY);
-            text.textContent = sectors[i];
-            text.setAttribute("transform", `rotate(${(midAngle * 180 / Math.PI)}, ${labelX}, ${labelY})`);
             text.setAttribute("class", "sector-label");
+            text.setAttribute("text-anchor", "middle");
+
+            // Divide o título em palavras e adiciona uma tspan para cada uma
+            const words = sectors[i].split(" ");
+            words.forEach((word, index) => {
+                const tspan = document.createElementNS(svgNS, "tspan");
+                tspan.setAttribute("x", labelX);
+                tspan.setAttribute("dy", index === 0 ? "0" : "1.2em"); // empilha as palavras
+                tspan.textContent = word;
+                text.appendChild(tspan);
+            });
 
             const group = document.createElementNS(svgNS, "g");
             group.classList.add("sector");
